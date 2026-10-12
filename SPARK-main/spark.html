@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>SPARK</title>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@500;700;800&family=Figtree:wght@400;600&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#eef3f1;--ink:#12302b;--mute:#5b736d;--card:#fff;--line:#cfdcd8;--acc:#e8a317;--good:#2a8f5f;--bad:#c4452f;--warn:#b7791f;
+box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#0e1f1c;--ink:#e6f1ee;--mute:#8fa9a2;--card:#16302b;--line:#27483f;--good:#4cc58a;--bad:#ef7a64;--warn:#f0b64a}}
+:root[data-theme="dark"]{--bg:#0e1f1c;--ink:#e6f1ee;--mute:#8fa9a2;--card:#16302b;--line:#27483f;--good:#4cc58a;--bad:#ef7a64;--warn:#f0b64a}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:400 16px/1.55 Figtree,system-ui,sans-serif}
+main{max-width:900px;margin:0 auto;padding:28px 20px 56px}
+h1,h2,h3{font-family:'Bricolage Grotesque',Figtree,system-ui,sans-serif;margin:0;line-height:1.1}
+h1{font-size:clamp(2.4rem,9vw,4rem);font-weight:800}h2{font-size:clamp(1.7rem,6vw,2.4rem);font-weight:800}h3{font-size:1.2rem;font-weight:700}
+p{margin:.5rem 0 0;color:var(--mute)}a{color:inherit}
+.crumbs{font-size:.9rem;color:var(--mute);margin-bottom:22px}.crumbs a{color:var(--mute)}
+.grid{display:grid;gap:14px;margin-top:26px}
+.opt{display:block;text-decoration:none;background:var(--card);border:2px solid var(--line);border-radius:14px;padding:24px;transition:border-color .15s,transform .15s}
+.opt:hover,.opt:focus-visible{border-color:var(--acc);outline:none;transform:translateX(4px)}
+.opt h3{font-size:1.5rem}
+.hero{border-left:8px solid var(--acc);padding-left:18px}
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin-top:22px}
+.kpi,.panel{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:14px 16px}
+.panel{margin-top:16px;padding:18px}
+.kpi b{display:block;font:800 1.6rem 'Bricolage Grotesque',system-ui,sans-serif}.kpi span{color:var(--mute);font-size:.9rem}
+.bad{color:var(--bad)}.good{color:var(--good)}.warn{color:var(--warn)}
+.tabs{display:flex;gap:6px;flex-wrap:wrap;margin-top:18px}
+.tabs a{text-decoration:none;padding:8px 14px;border-radius:999px;border:2px solid var(--line);font-weight:600;font-size:.92rem}
+.tabs a.on{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+.tag{display:inline-block;font-size:.75rem;font-weight:600;padding:1px 8px;border-radius:999px;border:1px solid var(--line);color:var(--mute);margin-left:6px}
+.tag.s{border-color:var(--bad);color:var(--bad)}.tag.g{border-color:var(--good);color:var(--good)}.tag.w{border-color:var(--warn);color:var(--warn)}
+.banner{margin-top:16px;padding:10px 14px;border:1px dashed var(--warn);border-radius:10px;font-size:.9rem;color:var(--warn)}
+.scroll{overflow-x:auto}table{width:100%;border-collapse:collapse;font-size:.93rem;min-width:520px}
+th,td{text-align:left;padding:8px 6px;border-bottom:1px solid var(--line)}
+select,input,textarea,button{font:inherit;color:var(--ink);background:var(--card);border:2px solid var(--line);border-radius:10px;padding:8px 12px}
+textarea,input[type=text]{width:100%}
+button{cursor:pointer;font-weight:600}button.p{background:var(--acc);border-color:var(--acc);color:#12302b}button:disabled{opacity:.5;cursor:default}
+select:focus-visible,input:focus-visible,textarea:focus-visible,button:focus-visible{outline:3px solid var(--acc)}
+label{display:block;margin-top:12px;font-weight:600;font-size:.92rem}
+.note{font-size:.88rem;color:var(--mute);margin-top:8px}.msg{margin-top:14px;padding:10px 14px;border-radius:10px;background:var(--card);border:2px solid var(--good)}
+.row{display:flex;justify-content:space-between;gap:12px;padding:8px 0;border-bottom:1px solid var(--line)}.row:last-child{border:0}
+.card{border:1px solid var(--line);border-radius:10px;padding:14px;margin-top:12px}
+svg text{fill:var(--mute);font:12px Figtree,sans-serif}
+</style></head><body><main id="app"></main>
+<script>
+const RATE=8,EF=0.82,N=14,BASE=10; // ₹/kWh and kg CO2/kWh are ASSUMPTIONS: replace with your tariff and the current CEA grid factor
+const campuses=[{name:"Main Campus",area:"Academic blocks, library, admin",m:1},{name:"Engineering Campus",area:"Labs, workshops, computer centre",m:1.35},{name:"Hostel Campus",area:"Hostels, mess, common areas",m:.85}];
+const ZN=[{id:'lab',n:'Computer Lab 2',b:30,w:.4,a:3,eq:'40 PCs × 100 W × 8 h = 32 kWh'},{id:'lib',n:'Library',b:45,w:.7,a:4},{id:'host',n:'Hostel A',b:90,w:1.05,a:50,noAH:1},{id:'can',n:'Canteen',b:35,w:.8,a:6},{id:'aud',n:'Auditorium',b:20,w:.5,a:1},{id:'pump',n:'Water pumps',b:25,w:1,a:2}];
+const occOv={};let camZ='lab',cur=0,msg='',acts=[{id:1,zone:'lib',rule:'R1',title:'Add closing checklist and timer for reading-room lights',owner:'Library in-charge',pri:'Medium',due:'done',status:'Resolved',note:'Timer fitted on reading-room lighting circuit. Closing checklist added.',rd:6}],
+reps=[{id:1,zone:'lab',cat:'Computers left on',desc:'PCs still on at 10 PM',age:2,ok:true,},{id:2,zone:'lab',cat:'Lights left on',desc:'Lab lights on overnight',age:1,ok:false}],nid=10;
+const $=id=>document.getElementById(id),fmt=n=>Math.round(n).toLocaleString('en-IN'),esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const zn=id=>ZN.find(z=>z.id==id).n;
+function rng(s){return()=>(s=(s*1664525+1013904223)%4294967296)/4294967296}
+function build(){const ro=rng(99+cur),r=rng(7+cur),m=campuses[cur].m,t=new Date();
+ return ZN.map(z=>{const tot=[],ah=[],occ=[];for(let d=0;d<N;d++){const we=[0,6].includes(new Date(t-(N-1-d)*864e5).getDay());
+  let T=z.b*(we?z.w:1)*m*(1+(r()-.5)*.1),A=z.a*m*(1+(r()-.5)*.2);
+  if(z.id=='lab'&&d>=11){T+=28*m;A+=28*m}
+  if(z.id=='lib'&&d>=2&&d<=5){T+=15*m;A+=15*m}
+  if(z.id=='pump'&&d>=10)T*=1.35;
+  if(z.id=='aud'&&d==N-1)T*=2.2;
+  let O=ro()>.85?1:0;if(z.id=='lab')O=0;if(z.id=='lib'&&d==N-1){T+=12;A+=12;O=34}occ.push(O);tot.push(T);ah.push(A)}return{...z,tot,ah,occ,ev:z.id=='aud'}})}
+const avg=a=>a.reduce((x,y)=>x+y,0)/a.length,med=a=>{const s=[...a].sort((x,y)=>x-y),k=s.length>>1;return s.length%2?s[k]:(s[k-1]+s[k])/2},sd=a=>{const m=avg(a);return Math.sqrt(avg(a.map(x=>(x-m)**2)))};
+function analyse(){const D=build(),al=[],exp=[];
+ D.forEach(z=>{const T=z.tot[N-1],A=z.ah[N-1];
+  if(!z.noAH){const md=med(z.ah.slice(0,BASE)),oc=occOv[z.id]??z.occ[N-1];if(A>Math.max(2*md,md+3)){const o={z:z.id,rule:'R1',name:'After-hours consumption',sev:oc===0?'High':'Medium',kwh:A-md,why:`After-hours use was ${A.toFixed(1)} kWh against a typical ${md.toFixed(1)} kWh (median of the first ${BASE} days). Threshold: more than 2× the median and 3 kWh above it. ${z.eq?'Equipment check: '+z.eq+' if all PCs stay on. ':''}Camera (YOLO person count): ${oc} ${oc==1?'person':'people'} after hours.`,fp:'Cameras can miss people who are out of view. Verify before acting.'};oc>=3?exp.push({...o,rule:'R4',name:'After-hours use with people present',why:`Camera shows about ${oc} people in the after-hours window, so this high use is likely legitimate (for example exam preparation). No alert raised. ${o.why}`}):al.push(oc===0?{...o,why:'Camera confirms the zone was empty. '+o.why}:o)}}
+  const b=z.tot.slice(0,BASE),mu=avg(b),s=sd(b);
+  if(T>mu+2.5*s&&T>1.15*mu){const o={z:z.id,rule:'R2',name:'Above baseline',sev:'Medium',kwh:T-mu,why:`Daily use was ${T.toFixed(0)} kWh against a baseline of ${mu.toFixed(0)} ± ${s.toFixed(1)} kWh. Flagged because it is more than 2.5 standard deviations and 15% above baseline.`,fp:'Could be weather, an event or higher occupancy. A steady rise on equipment like pumps can also mean a fault.'};
+   z.ev?exp.push({...o,why:'Scheduled event logged for today, so this high use is expected and no alert is raised. '+o.why}):al.push(o)}});
+ ZN.forEach(z=>{const n=reps.filter(r=>r.zone==z.id&&r.age<7).length;if(n>=3)al.push({z:z.id,rule:'R3',name:'Repeated waste reports',sev:'Medium',kwh:0,why:`${n} separate waste reports in the last 7 days for this zone.`,fp:'Reports are unverified until staff confirm them.'})});
+ return{D,al,exp}}
+const crumbs=t=>`<nav class="crumbs"><a href="#/">SPARK</a> / ${t}</nav>`;
+const picker=()=>`<label>Campus<br><select id="cs">${campuses.map((c,i)=>`<option value="${i}"${i==cur?' selected':''}>${c.name}</option>`).join('')}</select></label>`;
+const opt=(h,t,d)=>`<a class="opt" href="${h}"><h3>${t}</h3><p>${d}</p></a>`;
+const tag=(t,c)=>`<span class="tag ${c}">${t}</span>`;
+const money=k=>`₹${fmt(k*RATE)} · ${fmt(k*EF)} kg CO₂`;
+function home(){$('app').innerHTML=`<h1>SPARK</h1><p>Save power, cut waste and shrink your campus carbon footprint.</p><div class="grid">${opt('#/energy/overview','Energy management','Monitor electricity, detect wastage, assign actions and verify savings.')}${opt('#/resource/overview','Resource management','Plan meals, log food waste and cut leftovers.')}${opt('#/carbon','Carbon emission','See the CO₂ footprint of campus energy use.')}</div>`}
+const TABS=[['overview','Overview'],['alerts','Waste alerts'],['camera','Camera occupancy'],['report','Report waste'],['actions','Actions'],['savings','Savings']];
+function energy(tab){const{D,al,exp}=analyse(),c=campuses[cur];let h='';
+ const open=acts.filter(a=>a.status!='Resolved').length;
+ if(tab=='overview'){const tt=D.reduce((a,z)=>a+z.tot[N-1],0),ta=D.reduce((a,z)=>a+(z.noAH?0:z.ah[N-1]),0),mx=Math.max(...D.map(z=>z.tot[N-1]));
+  h=`<div class="kpis"><div class="kpi"><b>${fmt(tt)} kWh</b><span>Used today ${tag('simulated','s')}</span></div><div class="kpi"><b>₹${fmt(tt*RATE)}</b><span>Cost at ₹${RATE}/kWh ${tag('assumed rate','w')}</span></div><div class="kpi"><b class="bad">${fmt(al.reduce((a,x)=>a+x.kwh,0))} kWh</b><span>Possible avoidable ${tag('estimate','w')}</span></div><div class="kpi"><b>${al.length}</b><span>Active alerts, ${open} open actions</span></div></div>
+  <div class="panel"><h3>Today by zone</h3><div class="scroll"><table><tr><th>Zone</th><th>kWh today</th><th></th><th>After hours kWh</th><th>People after hours (camera)</th><th>Status</th></tr>${D.map(z=>{const st=al.some(a=>a.z==z.id&&a.rule!='R3')?'<b class="bad">Alert</b>':exp.some(e=>e.z==z.id)?'<b class="warn">High, expected</b>':'<span class="good">Normal</span>';return`<tr><td>${z.n}</td><td>${fmt(z.tot[N-1])}</td><td style="width:30%"><div style="height:10px;border-radius:5px;background:var(--acc);width:${z.tot[N-1]/mx*100}%"></div></td><td>${z.noAH?'n/a (residents present)':z.ah[N-1].toFixed(1)}</td><td>${occOv[z.id]??z.occ[N-1]}</td><td>${st}</td></tr>`}).join('')}</table></div>
+  <p class="note">Data quality: ${N} of ${N} days present for every zone. All values are SYNTHETIC demo readings, not measurements from a real campus.</p></div>`}
+ if(tab=='alerts'){h=(al.length?al.map(a=>{const has=acts.some(x=>x.zone==a.z&&x.rule==a.rule&&x.status!='Resolved');return`<div class="card"><h3>${zn(a.z)}: ${a.name} ${tag(a.sev,a.sev=='High'?'s':'w')}</h3><p>${a.why}</p>${a.kwh?`<p><b>Potential avoidable:</b> ${a.kwh.toFixed(1)} kWh, ${money(a.kwh)} ${tag('estimate until verified','w')}</p>`:''}<p class="note">Possible false positive: ${a.fp}</p><button class="p" ${has?'disabled':''} onclick="mk('${a.z}','${a.rule}','${esc(a.name)}')">${has?'Action created':'Create action'}</button></div>`}).join(''):'<div class="card">No active alerts. Every zone is within its baseline.</div>')
+  +exp.map(a=>`<div class="card"><h3>${zn(a.z)}: ${a.name} ${tag('expected','g')}</h3><p>${a.why}</p></div>`).join('')+'<p class="note">Hostel A is not checked for after-hours use because residents are present at night by design.</p>'}
+ if(tab=='camera'){const z=D.find(x=>x.id==camZ),oc=occOv[z.id]??z.occ[N-1],pk={lab:38,lib:60,can:45,aud:20,pump:0,host:120}[z.id],dayL=(z.tot[N-1]-z.ah[N-1])/11,H=Array.from({length:24},(_,h)=>{const day=h>=8&&h<19,ni=h>=22||h<5;return{l:day?dayL:ni?z.ah[N-1]/7:.5,p:day?Math.round(pk*Math.sin(Math.PI*(h-8)/11)):ni?oc:0,ni}}),ml=Math.max(...H.map(x=>x.l)),mp=Math.max(1,...H.map(x=>x.p)),bw=640/24;
+  h=`<div class="panel"><h3>How camera occupancy works</h3><p>A YOLO person detector (OpenCV + Ultralytics) runs on a small computer next to each CCTV camera and counts people every minute. Only the number leaves that computer. No video, images or faces are stored or sent. SPARK compares the count with electricity use to confirm waste or explain high use.</p></div>
+  <div class="panel"><h3>People vs electricity by zone</h3><div class="scroll"><table><tr><th>Zone</th><th>Camera</th><th>Avg people after hours</th><th>After-hours kWh</th><th>Verdict</th></tr>${D.map(x=>{const o=occOv[x.id]??x.occ[N-1],a=al.find(y=>y.z==x.id&&y.rule=='R1'),e=exp.find(y=>y.z==x.id&&y.rule=='R4');return`<tr><td>${x.n}</td><td>CAM-${x.id.toUpperCase()}</td><td>${o}</td><td>${x.ah[N-1].toFixed(1)}</td><td>${x.noAH?'Not evaluated (residents present)':a?(o===0?'<b class="bad">Power on, nobody there</b>':'<b class="warn">High use, few people</b>'):e?'<b class="warn">High use, people present: expected</b>':'<span class="good">Normal</span>'}</td></tr>`}).join('')}</table></div><p class="note">${tag('simulated counts','s')} Replace them with real counts using the loader below.</p></div>
+  <div class="panel"><h3>Today in one zone ${tag('simulated','s')}</h3><label>Zone<br><select onchange="camZ=this.value;route()">${ZN.map(x=>`<option value="${x.id}"${x.id==camZ?' selected':''}>${x.n}</option>`).join('')}</select></label>
+  <div class="scroll"><svg viewBox="0 0 640 210" width="100%" style="min-width:480px">${H.map((x,i)=>`<rect x="${i*bw+3}" y="${180-x.l/ml*150}" width="${bw-6}" height="${x.l/ml*150}" rx="3" fill="${x.ni&&x.p===0&&x.l>1?'#c4452f':'#e8a317'}"/>${i%3==0?`<text x="${i*bw+bw/2}" y="200" text-anchor="middle">${i}h</text>`:''}`).join('')}<polyline fill="none" stroke="#2a8f5f" stroke-width="3" points="${H.map((x,i)=>`${i*bw+bw/2},${180-x.p/mp*150}`).join(' ')}"/></svg></div>
+  <p class="note">Bars are electricity per hour. The green line is people counted. Red bars mean power is on while the camera counts nobody.</p></div>
+  <div class="panel"><h3>Load camera counts</h3><p>Run <b>occupancy_agent.py</b> next to the camera and paste the lines it writes (occupancy.jsonl) here. Lines from 10 PM to 5 AM replace the simulated after-hours count for that zone.</p><textarea id="occin" rows="4" placeholder='{"zone":"lab","ts":"2026-10-12T23:00:05","people":0,"source":"yolo"}'></textarea><p><button class="p" onclick="occImp()">Load camera counts</button></p></div>`}
+ if(tab=='report'){h=`<div class="panel"><h3>Report energy waste</h3><p>Scan the room's QR code, or choose the zone here. Do not touch electrical equipment. Just report what you see. No name is collected.</p>
+  <label>Zone<br><select id="rz">${ZN.map(z=>`<option value="${z.id}">${z.n}</option>`).join('')}</select></label>
+  <label>What did you see?<br><select id="rc">${['Lights left on','Fans running in empty room','Computers left on','Air conditioning running unnecessarily','Outdoor lights on in daylight','Other'].map(x=>`<option>${x}</option>`).join('')}</select></label>
+  <label>Details (optional)<br><textarea id="rd" rows="2" maxlength="200"></textarea></label><p><button class="p" onclick="rep()">Submit report</button></p></div>
+  <div class="panel"><h3>Recent reports</h3>${reps.length?reps.map(r=>`<div class="row"><span>${zn(r.zone)}: ${r.cat}${r.desc?' ('+esc(r.desc)+')':''}${r.n>1?' ×'+r.n:''}<br><span class="note">${r.age?r.age+' day(s) ago':'just now'} · ${r.ok?'verified by staff':'unverified'}</span></span>${r.ok?'':`<button onclick="ver(${r.id})">Verify</button>`}</div>`).join(''):'<p>No reports yet.</p>'}
+  <p class="note">Duplicate reports for the same zone and issue on the same day are merged. Three separate reports in a week raise an alert.</p></div>`}
+ if(tab=='actions'){h=acts.length?acts.map(a=>`<div class="card"><h3>${a.title} ${tag(a.status,a.status=='Resolved'?'g':'w')}</h3><p>${zn(a.zone)} · Owner: ${a.owner} · Priority: ${a.pri} · Due: ${a.due}</p>${a.status=='Resolved'?`<p>Resolution note: ${esc(a.note)}</p><p class="note">Resolved is not the same as saved. See the Savings tab for verification.</p>`:`<label>Resolution note<br><input type="text" id="n${a.id}" placeholder="What was done?"></label><p>${a.status=='Open'?`<button onclick="st(${a.id},'In progress')">Start work</button> `:''}<button class="p" onclick="res(${a.id})">Mark resolved</button></p>`}</div>`).join(''):'<div class="card">No actions yet. Create one from a waste alert.</div>'}
+ if(tab=='savings'){const L=D.find(z=>z.id=='lib'),a=acts[0],b=L.ah.slice(2,6),p=L.ah.slice(7),ba=avg(b),pa=avg(p),pct=(ba-pa)/ba*100,sv=(ba-pa)*p.length;
+  h=`<div class="panel"><h3>Library: after-hours fix ${tag('verified on demo data','g')}</h3><p>${a.title}</p>
+  <div class="kpis"><div class="kpi"><b>${ba.toFixed(1)} kWh</b><span>Baseline per night (days 3 to 6, issue active)</span></div><div class="kpi"><b>${pa.toFixed(1)} kWh</b><span>After fix per night (days 8 to 14)</span></div><div class="kpi"><b class="good">${pct.toFixed(0)}%</b><span>Reduction</span></div><div class="kpi"><b class="good">${sv.toFixed(0)} kWh</b><span>${money(sv)} saved in ${p.length} days</span></div></div>
+  <p class="note">Reduction % = (Baseline − After) ÷ Baseline × 100. Confidence: medium. Meter-based and compared per night, but occupancy, exam timetable and the weekday and weekend mix were not controlled. The ₹ and CO₂ figures use an assumed tariff and emission factor.</p></div>
+  ${acts.slice(1).filter(x=>x.status=='Resolved').map(x=>`<div class="card"><h3>${x.title} ${tag('estimate only','w')}</h3><p>Resolved, but there are no follow-up readings yet. Collect at least 3 matched days of readings before claiming a saving.</p></div>`).join('')}`}
+ $('app').innerHTML=crumbs('Energy management')+`<div class="hero"><h2>Energy management</h2><p>${c.name}: ${c.area}</p></div>${picker()}<div class="banner">SYNTHETIC demo data. Every figure here is simulated.</div>${msg?`<div class="msg">${msg}</div>`:''}<nav class="tabs">${TABS.map(t=>`<a href="#/energy/${t[0]}" class="${t[0]==tab?'on':''}">${t[1]}${t[0]=='alerts'&&al.length?' ('+al.length+')':''}</a>`).join('')}</nav>${h}`;msg=''}
+function occImp(){const g={};let n=0;document.getElementById('occin').value.split('\n').forEach(l=>{try{const o=JSON.parse(l),h=new Date(o.ts).getHours();if(ZN.some(z=>z.id==o.zone)&&Number.isFinite(+o.people)&&+o.people>=0&&(h>=22||h<5)){(g[o.zone]=g[o.zone]||[]).push(+o.people);n++}}catch(e){}});
+ Object.entries(g).forEach(([k,v])=>occOv[k]=Math.round(avg(v)*10)/10);msg=n?`Loaded ${n} camera counts for ${Object.keys(g).join(', ')}. Alerts now use these counts.`:'No valid after-hours lines found. Each line needs zone, ts (10 PM to 5 AM) and people.';route()}
+function mk(z,rule,name){acts.push({id:nid++,zone:z,rule,title:name+': check '+zn(z),owner:z=='lab'?'Lab technician':'Facility team',pri:rule=='R1'?'High':'Medium',due:new Date(Date.now()+3*864e5).toLocaleDateString('en-IN'),status:'Open',note:''});msg='Action created and assigned.';location.hash='#/energy/actions'}
+function st(id,s){acts.find(a=>a.id==id).status=s;route()}
+function res(id){const n=$('n'+id).value.trim();if(!n){msg='Add a resolution note before resolving.';return route()}const a=acts.find(x=>x.id==id);a.status='Resolved';a.note=n;msg='Resolved. Collect follow-up readings to verify the saving.';route()}
+function rep(){const z=$('rz').value,c=$('rc').value,d=$('rd').value.trim().slice(0,200),dup=reps.find(r=>r.zone==z&&r.cat==c&&r.age==0);
+ if(dup){dup.n=(dup.n||1)+1;msg='This was already reported today, so it was added to the existing report.'}else{reps.unshift({id:nid++,zone:z,cat:c,desc:d,age:0,ok:false});msg='Report submitted. Thank you.'}route()}
+function ver(id){reps.find(r=>r.id==id).ok=true;route()}
+const MEALS=['Breakfast','Lunch','Snacks','Dinner'],CATS=['Preparation scraps','Unserved cooked surplus','Plate returns','Spoiled / expired stock','Other'],REAS=['Overproduction','Low demand','Quality / taste','Excessive portion','Spoilage','Handling issue','Unknown'],DISP=['General disposal','Compost / biowaste','Approved donation','Other approved route','Unknown'];
+const ITEMS=[{n:'Rice',std:.15,c:45},{n:'Dal',std:.12,c:90},{n:'Roti',std:.10,c:40},{n:'Sabzi',std:.10,c:70}];
+const ROLES={manager:'Mess manager',kitchen:'Kitchen staff',logger:'Waste logger',reviewer:'Campus reviewer',admin:'CRMS admin'};
+const PERM={plan:['manager','admin'],prod:['kitchen','manager','admin'],waste:['logger','manager','admin'],close:['manager','admin'],stock:['kitchen','manager','admin'],fix:['manager','admin']};
+const RT=[['overview','Overview'],['plan','Meal planner'],['production','Production'],['waste','Record waste'],['closeout','Closeout'],['reports','Reports'],['stock','Stock & expiry']];
+let role='manager',fsSel=null,FSD={},fsR=7,fsF={meal:'',cat:'',item:''},lastW='';
+const iso=k=>new Date(Date.now()+k*864e5).toISOString().slice(0,10),sum=(a,f)=>a.reduce((x,y)=>x+f(y),0),can=a=>PERM[a].includes(role),f1=n=>(+n).toFixed(1);
+const sl=(id,a,v='')=>`<select id="${id}">${a.map(x=>`<option${x==v?' selected':''}>${x}</option>`).join('')}</select>`;
+function fs(){return FSD[cur]||(FSD[cur]=seedFS(cur))}
+function seedFS(ci){const r=rng(11+ci),m=campuses[ci].m,S=[],W=[];let id=1,wid=1;const std={};ITEMS.forEach(i=>std[i.n]=i.std);
+ for(let k=7;k>=1;k--)['Lunch','Dinner'].forEach(ml=>{if(k==7&&ml=='Dinner')return;
+  const exp=Math.round((ml=='Lunch'?420:380)*m),act=Math.round(exp*(.86+r()*.1));
+  const it=ITEMS.map(i=>{const pl=+f1(exp*i.std),pr=+f1(pl*(i.n=='Rice'?1.08+r()*.08:1.02+r()*.06));return{n:i.n,pl,pr,sv:null}});
+  const s={id:id++,date:iso(-k),meal:ml,loc:'Main mess',exp,act,status:'Closed',items:it};S.push(s);
+  const w=(item,cat,reason,kg,disp)=>W.push({id:wid++,sid:s.id,item,cat,reason,kg:+f1(kg),disp,note:'',by:'Waste logger',at:s.date});
+  it.forEach((i,x)=>{const left=Math.max(0,i.pr-act*ITEMS[x].std);if(left>.3){w(i.n,CATS[1],'Overproduction',left*(i.n=='Rice'?.75:.4),'General disposal');if(i.n=='Rice')w(i.n,CATS[1],'Overproduction',left*.2,'Approved donation')}
+   if(i.n=='Dal'||i.n=='Roti')w(i.n,CATS[2],'Excessive portion',act*ITEMS[x].std*.06,'Compost / biowaste')});
+  w('Sabzi',CATS[0],'Handling issue',2+r()*1.5,'Compost / biowaste')});
+ const lun=S.filter(s=>s.meal=='Lunch').slice(-4),exp=Math.round(avg(lun.map(s=>s.act)));
+ S.push({id:id++,date:iso(0),meal:'Lunch',loc:'Main mess',exp,act:null,status:'Draft',items:ITEMS.map(i=>({n:i.n,pl:+f1(exp*i.std),pr:null,sv:null}))});
+ const K=[{id:1,ing:'Rice',qty:80,recv:iso(-20),bb:iso(40),loc:'Dry store'},{id:2,ing:'Paneer',qty:6,recv:iso(-4),bb:iso(1),loc:'Cold room'},{id:3,ing:'Tomato',qty:12,recv:iso(-5),bb:iso(-1),loc:'Cold room'},{id:4,ing:'Milk',qty:20,recv:iso(-2),bb:iso(2),loc:'Cold room'}];
+ return{S,W,K,aud:[],recs:[],std,id,wid,kid:5}}
+const aud=(a,d)=>fs().aud.unshift({at:new Date().toLocaleString('en-IN'),by:ROLES[role],a,d});
+function mt(S,W){const ids=new Set(S.map(s=>s.id)),w=W.filter(x=>ids.has(x.sid)),real=w.filter(x=>x.disp!='Approved donation'),ok=new Set(S.filter(s=>s.act>0).map(s=>s.id)),
+ tot=sum(real,x=>x.kg),dn=sum(S.filter(s=>s.act>0),s=>s.act),okw=sum(real.filter(x=>ok.has(x.sid)),x=>x.kg),cost=item=>(ITEMS.find(i=>i.n==item)||{}).c,known=real.filter(x=>cost(x.item));
+ return{tot,dn,per:dn?okw/dn*100:null,red:sum(w.filter(x=>x.disp=='Approved donation'),x=>x.kg),cost:sum(known,x=>x.kg*cost(x.item)),nc:real.length-known.length,real,
+  cat:CATS.map(c=>[c,sum(real.filter(x=>x.cat==c),x=>x.kg)]),top:Object.entries(real.reduce((o,x)=>(o[x.item]=(o[x.item]||0)+x.kg,o),{})).sort((a,b)=>b[1]-a[1]).slice(0,5)}}
+function sugg(meal){const f=fs(),cs=f.S.filter(s=>s.meal==meal&&s.status=='Closed').slice(-4),out=[];
+ if(cs.length<3)return{avg:cs.length?Math.round(avg(cs.map(s=>s.act))):null,out};
+ ITEMS.forEach(i=>{const rates=cs.map(s=>{const it=s.items.find(x=>x.n==i.n),u=sum(f.W.filter(w=>w.sid==s.id&&w.item==i.n&&w.cat==CATS[1]&&w.disp!='Approved donation'),w=>w.kg);return u/it.pr});
+  const hi=rates.filter(x=>x>.10).length;if(hi>=3){const a=avg(rates),adj=a>.2?10:5;if(!f.recs.some(r=>r.item==i.n&&r.meal==meal))out.push({item:i.n,adj,a,hi,n:cs.length})}});
+ return{avg:Math.round(avg(cs.map(s=>s.act))),out}}
+function resource(tab='overview'){const f=fs(),sel=f.S.find(s=>s.id==fsSel)||f.S[f.S.length-1];fsSel=sel.id;let h='';
+ const rs=fsR==7?f.S.filter(s=>s.date>=iso(-7)):f.S,M=mt(rs,f.W),lock=sel.status=='Closed';
+ const sessSel=`<label>Meal session<br><select onchange="fsSel=+this.value;route()">${[...f.S].reverse().map(s=>`<option value="${s.id}"${s.id==sel.id?' selected':''}>${s.date} ${s.meal} (${s.status})</option>`).join('')}</select></label>`;
+ const no=a=>can(a)?'':`<div class="note bad">Your role (${ROLES[role]}) can view this screen but not change it.</div>`;
+ if(tab=='overview'){const mx=Math.max(1,...M.cat.map(c=>c[1])),dq=rs.filter(s=>s.act==null||s.items.some(i=>i.pr==null)),dpd={};rs.filter(s=>s.act>0).forEach(s=>{dpd[s.date]=dpd[s.date]||[0,0];dpd[s.date][0]+=sum(M.real.filter(x=>x.sid==s.id),x=>x.kg);dpd[s.date][1]+=s.act});
+  const tr=Object.entries(dpd).sort().map(([d,v])=>[d,v[0]/v[1]*100]),tm=Math.max(1,...tr.map(t=>t[1])),pts=tr.map((t,i)=>`${20+i*(600/Math.max(1,tr.length-1))},${130-t[1]/tm*100}`).join(' ');
+  const cl=rs.filter(s=>s.status=='Closed'),pe=sum(cl,s=>s.exp),pa=sum(cl,s=>s.act),pp=sum(cl,s=>sum(s.items,i=>i.pl)),pr=sum(cl,s=>sum(s.items,i=>i.pr));
+  h=`<p><label>Period <select onchange="fsR=+this.value;route()"><option value="7"${fsR==7?' selected':''}>Last 7 days</option><option value="0"${fsR?'':' selected'}>All data</option></select></label></p>
+  <div class="kpis"><div class="kpi"><b class="bad">${f1(M.tot)} kg</b><span>Waste recorded ${tag('simulated','s')}</span></div><div class="kpi"><b>${M.per==null?'n/a':f1(M.per)+' kg'}</b><span>Waste per 100 diners</span></div><div class="kpi"><b>${fmt(M.dn)}</b><span>Diners served</span></div><div class="kpi"><b>₹${fmt(M.cost)}</b><span>Est. cost ${M.nc?tag(M.nc+' records without cost, not counted as zero','w'):''}</span></div><div class="kpi"><b class="good">${f1(M.red)} kg</b><span>Donated, not counted as waste</span></div></div>
+  <div class="panel"><h3>Waste by category</h3>${M.cat.map(c=>`<div class="row"><span style="width:200px">${c[0]}</span><span style="flex:1"><div style="height:12px;border-radius:6px;background:var(--acc);width:${c[1]/mx*100}%"></div></span><b>${f1(c[1])} kg</b></div>`).join('')}</div>
+  <div class="panel"><h3>Top 5 wasted items</h3>${M.top.map((t,i)=>`<div class="row"><span>${i+1}. ${t[0]}</span><b>${f1(t[1])} kg</b></div>`).join('')||'<p>No data.</p>'}</div>
+  <div class="panel"><h3>Waste per 100 diners by day</h3><div class="scroll"><svg viewBox="0 0 640 150" width="100%" style="min-width:420px"><polyline fill="none" stroke="#e8a317" stroke-width="3" points="${pts}"/>${tr.map((t,i)=>`<text x="${20+i*(600/Math.max(1,tr.length-1))}" y="146" text-anchor="middle">${t[0].slice(5)}</text>`).join('')}</svg></div></div>
+  <div class="panel"><h3>Plan vs actual (closed meals)</h3><div class="row"><span>Expected vs actual diners</span><b>${fmt(pe)} vs ${fmt(pa)}</b></div><div class="row"><span>Planned vs prepared quantity</span><b>${f1(pp)} vs ${f1(pr)} kg</b></div></div>
+  ${dq.length?`<div class="banner">Data quality: ${dq.length} session(s) have missing diners or production entries: ${dq.map(s=>s.date+' '+s.meal).join(', ')}.</div>`:''}`}
+ if(tab=='plan'){const meal=document.getElementById('pm')?.value||'Lunch',sg=sugg(meal);
+  h=`<div class="panel"><h3>Create meal session</h3>${no('plan')}<label>Date<br><input type="date" id="pd" value="${iso(1)}"></label><label>Meal<br>${sl('pm',MEALS,meal)}</label>
+  <label>Expected diners ${sg.avg?`<span class="note">(average of last comparable meals: ${sg.avg})</span>`:''}<br><input type="number" id="pe" min="1" value="${sg.avg||''}"></label>
+  <p class="note">Planned quantity = expected diners × standard quantity per diner. The menu below is copied from the standard menu. You can edit it after saving.</p>
+  <table><tr><th>Item</th><th>Standard kg per diner</th></tr>${ITEMS.map(i=>`<tr><td>${i.n}</td><td>${f.std[i.n].toFixed(3)}</td></tr>`).join('')}</table>
+  <p><button class="p" ${can('plan')?'':'disabled'} onclick="fsNew()">Save as draft</button></p></div>
+  <div class="panel"><h3>Planning suggestions for ${meal} ${tag('advisory','w')}</h3>${sg.out.length?sg.out.map((o,i)=>`<div class="card"><b>${o.item}:</b> unserved surplus was above 10% in ${o.hi} of the last ${o.n} comparable meals (average ${(o.a*100).toFixed(0)}%). Suggest reducing the standard quantity by ${o.adj}%.<p><button class="p" ${can('plan')?'':'disabled'} onclick="fsRec('${o.item}','${meal}',${o.adj},1)">Accept</button> <button ${can('plan')?'':'disabled'} onclick="fsRec('${o.item}','${meal}',${o.adj},0)">Reject</button></p></div>`).join(''):'<p>No suggestion. Suggestions need 3 or more comparable closed meals with repeated surplus, and they never cut production automatically.</p>'}</div>`}
+ if(tab=='production'){h=`${sessSel}${no('prod')}<div class="panel"><h3>${sel.date} ${sel.meal} ${tag(sel.status,'w')}</h3><div class="scroll"><table><tr><th>Item</th><th>Planned kg</th><th>Prepared kg</th><th>Served kg (optional)</th><th></th></tr>${sel.items.map((i,x)=>`<tr><td>${i.n}</td><td>${i.pl}</td><td><input type="number" step=".1" min="0" id="pr${x}" value="${i.pr??''}" style="width:90px" ${lock||!can('prod')?'disabled':''}></td><td><input type="number" step=".1" min="0" id="sv${x}" value="${i.sv??''}" style="width:90px" ${lock||!can('prod')?'disabled':''}></td><td>${i.pr>i.pl*1.25?'<span class="warn">Far above plan, please review</span>':''}</td></tr>`).join('')}</table></div>
+  <label>Reason (required when changing a saved quantity)<br><input type="text" id="prr"></label><p><button class="p" ${lock||!can('prod')?'disabled':''} onclick="fsProd()">Save quantities</button></p><p class="note">A high quantity only raises a warning. Emergency cooking is never blocked.</p></div>`}
+ if(tab=='waste'){const ws=f.W.filter(w=>w.sid==sel.id);
+  h=`${sessSel}${no('waste')}<div class="panel"><h3>Record waste for ${sel.date} ${sel.meal}</h3><label>Food item<br>${sl('wi',[...ITEMS.map(i=>i.n),'Mixed / unclassified'])}</label><label>Category<br>${sl('wc',CATS)}</label><label>Weight (kg)<br><input type="number" id="wk" step=".1" min="0" style="width:140px;font-size:1.3rem"></label><label>Reason<br>${sl('wr',REAS)}</label><label>Disposition<br>${sl('wd',DISP)}</label><label>Note (optional, no student details)<br><input type="text" id="wn" maxlength="120"></label>
+  <p><button class="p" ${lock||!can('waste')?'disabled':''} onclick="fsWaste()">Save waste entry</button></p></div>
+  <div class="panel"><h3>Entries for this meal</h3><label>Reason for any correction<br><input type="text" id="cr"></label>${ws.map(w=>`<div class="row"><span>${w.item}: ${w.cat}, ${w.reason}<br><span class="note">${w.disp}${w.disp=='Approved donation'?' (redirected, not counted as waste)':''} · ${w.by}</span></span><span><b>${w.kg} kg</b>${can('fix')&&!lock?` <input type="number" step=".1" min="0" id="wf${w.id}" style="width:70px"><button onclick="fsFix(${w.id})">Correct</button>`:''}</span></div>`).join('')||'<p>No entries yet.</p>'}</div>`}
+ if(tab=='closeout'){const miss=[];if(!(sel.act>0))miss.push('Actual diner count');if(sel.items.some(i=>i.pr==null))miss.push('Prepared quantity for every item');const nw=f.W.filter(w=>w.sid==sel.id).length;
+  h=`${sessSel}${no('close')}<div class="panel"><h3>${sel.date} ${sel.meal} ${tag(sel.status,lock?'g':'w')}</h3><label>Actual diners (aggregate count)<br><input type="number" id="ad" min="1" value="${sel.act??''}" ${lock||!can('close')?'disabled':''}></label>
+  ${lock?'':`<p class="note">Dining-hall camera estimate (aggregate YOLO count, ${tag('simulated','s')}): <b>${Math.round(sel.exp*.91)}</b> people. It may include staff, so check it before use. <button onclick="document.getElementById('ad').value=${Math.round(sel.exp*.91)}">Use camera count</button></p>`}<div class="row"><span>Expected diners</span><b>${sel.exp}</b></div><div class="row"><span>Prepared total</span><b>${f1(sum(sel.items,i=>i.pr||0))} kg</b></div><div class="row"><span>Waste entries</span><b>${nw}</b></div>
+  <p>${miss.length?`<span class="bad">Missing: ${miss.join(', ')}</span>`:'<span class="good">All required fields present</span>'}</p>
+  ${nw?'':`<label><input type="checkbox" id="nw" style="width:auto"> No waste to record for this meal</label>`}
+  <p><button ${lock||!can('close')?'disabled':''} onclick="fsClose(0)">Save draft</button> <button class="p" ${lock||!can('close')?'disabled':''} onclick="fsClose(1)">Close meal</button></p></div>`}
+ if(tab=='reports'){const sess=new Map(f.S.map(s=>[s.id,s])),rows=f.W.filter(w=>(!fsF.meal||sess.get(w.sid).meal==fsF.meal)&&(!fsF.cat||w.cat==fsF.cat)&&(!fsF.item||w.item==fsF.item)),
+  cs=f.S.filter(s=>s.status=='Closed'),a=cs.slice(0,Math.floor(cs.length/2)),b=cs.slice(Math.floor(cs.length/2)),ma=mt(a,f.W),mb=mt(b,f.W),
+  csv='date,meal,item,category,reason,kg,disposition\n'+rows.map(w=>[sess.get(w.sid).date,sess.get(w.sid).meal,w.item,w.cat,w.reason,w.kg,w.disp].join(',')).join('\n');
+  const flt=(k,l,o)=>`<label style="display:inline-block;margin-right:10px">${l}<br><select onchange="fsF.${k}=this.value;route()"><option value="">All</option>${o.map(x=>`<option${fsF[k]==x?' selected':''}>${x}</option>`).join('')}</select></label>`;
+  h=`<div class="panel"><h3>Filters</h3>${flt('meal','Meal',MEALS)}${flt('cat','Category',CATS)}${flt('item','Item',[...ITEMS.map(i=>i.n),'Mixed / unclassified'])}<p>${rows.length} entries · ${f1(sum(rows.filter(w=>w.disp!='Approved donation'),w=>w.kg))} kg counted as waste</p>
+  <label>CSV export (select and copy)<br><textarea rows="5" readonly onclick="this.select()">${esc(csv)}</textarea></label></div>
+  <div class="panel"><h3>Baseline vs pilot ${tag('demo data','s')}</h3><div class="row"><span>Earlier half (${a.length} meals)</span><b>${ma.per==null?'n/a':f1(ma.per)} kg per 100 diners</b></div><div class="row"><span>Later half (${b.length} meals)</span><b>${mb.per==null?'n/a':f1(mb.per)} kg per 100 diners</b></div><p class="note">This only compares two halves of simulated data. A real pilot needs a baseline period, a pilot period and matched meal types before any reduction is claimed. Also track shortages so lower waste does not mean underproduction.</p></div>
+  <div class="panel"><h3>Audit trail</h3>${f.aud.map(x=>`<div class="row"><span>${x.a}: ${esc(x.d)}</span><span class="note">${x.by} · ${x.at}</span></div>`).join('')||'<p>No changes recorded yet. Every plan, correction and recommendation decision is listed here.</p>'}</div>`}
+ if(tab=='stock'){h=`${no('stock')}<div class="panel"><h3>Ingredient batches</h3><div class="scroll"><table><tr><th>Ingredient</th><th>Remaining kg</th><th>Received</th><th>Best before</th><th>Location</th><th>Status</th><th></th></tr>${f.K.map(k=>{const d=(Date.parse(k.bb)-Date.parse(iso(0)))/864e5,st=k.qty==0?'Cleared':d<0?'<b class="bad">Expired</b>':d<=2?'<b class="warn">Expires soon</b>':'<span class="good">OK</span>';return`<tr><td>${k.ing}</td><td>${k.qty}</td><td>${k.recv}</td><td>${k.bb}</td><td>${k.loc}</td><td>${st}</td><td>${d<0&&k.qty>0&&can('stock')?`<button onclick="fsDisc(${k.id})">Log as spoiled</button>`:''}</td></tr>`}).join('')}</table></div></div>
+  <div class="panel"><h3>Add batch</h3><label>Ingredient<br><input type="text" id="ki"></label><label>Quantity received (kg)<br><input type="number" id="kq" min="0" step=".1"></label><label>Best before<br><input type="date" id="kb"></label><label>Storage location<br><input type="text" id="kl" value="Dry store"></label><p><button class="p" ${can('stock')?'':'disabled'} onclick="fsBatch()">Save batch</button></p></div>`}
+ $('app').innerHTML=crumbs('Resource management')+`<div class="hero"><h2>Food waste management</h2><p>Main mess, ${campuses[cur].name}</p></div><div class="banner">SYNTHETIC demo data for a mess. Weights, diners and costs are simulated.</div>${picker()} <label style="display:inline-block">Role<br><select onchange="role=this.value;route()">${Object.entries(ROLES).map(([k,v])=>`<option value="${k}"${k==role?' selected':''}>${v}</option>`).join('')}</select></label>${msg?`<div class="msg">${msg}</div>`:''}<nav class="tabs">${RT.map(t=>`<a href="#/resource/${t[0]}" class="${t[0]==tab?'on':''}">${t[1]}</a>`).join('')}</nav>${h}`;msg=''}
+const V=id=>document.getElementById(id).value.trim(),guard=a=>can(a)?1:(msg='Your role cannot do this.',route(),0);
+function fsNew(){if(!guard('plan'))return;const f=fs(),d=V('pd'),m=V('pm'),e=+V('pe');
+ if(!d||!(e>0)){msg='Enter a date and an expected diner count above zero.';return route()}
+ if(f.S.some(s=>s.date==d&&s.meal==m)&&role!='admin'){msg='A session for this date and meal already exists. Only an administrator can add another.';return route()}
+ const s={id:f.id++,date:d,meal:m,loc:'Main mess',exp:e,act:null,status:'Draft',items:ITEMS.map(i=>({n:i.n,pl:+f1(e*f.std[i.n]),pr:null,sv:null}))};f.S.push(s);fsSel=s.id;aud('Meal planned',`${d} ${m}, ${e} expected diners`);msg='Draft session saved. Enter production quantities next.';location.hash='#/resource/production'}
+function fsRec(item,meal,adj,ok){const f=fs();f.recs.push({item,meal,ok});if(ok)f.std[item]=+(f.std[item]*(1-adj/100)).toFixed(4);aud(ok?'Suggestion accepted':'Suggestion rejected',`${item} (${meal}) ${adj}%`);msg=ok?`Standard quantity for ${item} reduced by ${adj}%. Review it after the next meals.`:'Suggestion rejected and saved.';route()}
+function fsProd(){if(!guard('prod'))return;const s=fs().S.find(x=>x.id==fsSel),why=V('prr'),nv=[];
+ for(let x=0;x<s.items.length;x++){const p=V('pr'+x),v=V('sv'+x);if(p===''||isNaN(+p)||+p<0||(v!==''&&(isNaN(+v)||+v<0))){msg='Enter prepared quantities as numbers of 0 or more.';return route()}nv.push([+p,v===''?null:+v])}
+ if(s.items.some((i,x)=>i.pr!=null&&i.pr!=nv[x][0])&&!why){msg='Enter a reason to change a saved quantity.';return route()}
+ s.items.forEach((i,x)=>{if(i.pr!=null&&i.pr!=nv[x][0])aud('Production corrected',`${s.date} ${s.meal} ${i.n}: ${i.pr} to ${nv[x][0]} kg. Reason: ${why}`);i.pr=nv[x][0];i.sv=nv[x][1]});
+ if(s.status=='Draft')s.status='Open';const hi=s.items.filter(i=>i.pr>i.pl*1.25).map(i=>i.n);msg='Quantities saved.'+(hi.length?' Check '+hi.join(', ')+': prepared far above plan.':'');route()}
+function fsWaste(){if(!guard('waste'))return;const f=fs(),kg=+V('wk'),w={id:f.wid++,sid:fsSel,item:V('wi'),cat:V('wc'),reason:V('wr'),kg,disp:V('wd'),note:V('wn'),by:ROLES[role],at:iso(0)},key=JSON.stringify([w.sid,w.item,w.cat,kg,w.disp]);
+ if(!(kg>0)){msg='Enter a weight above zero.';return route()}
+ if(key==lastW){msg='This looks like a duplicate of the entry you just saved, so it was not added again.';return route()}
+ lastW=key;f.W.push(w);msg=`Saved: ${kg} kg ${w.item}.`;route();setTimeout(()=>lastW='',4000)}
+function fsFix(id){if(!guard('fix'))return;const f=fs(),w=f.W.find(x=>x.id==id),v=+V('wf'+id),why=V('cr');if(!(v>0)||!why){msg='Enter a new weight above zero and a reason for the correction.';return route()}aud('Waste corrected',`${w.item} ${w.kg} to ${v} kg. Reason: ${why}`);w.kg=v;msg='Correction saved and recorded in the audit trail.';route()}
+function fsClose(c){if(!guard('close'))return;const s=fs().S.find(x=>x.id==fsSel),a=+V('ad');if(!(a>0)){msg='Enter the actual diner count above zero.';return route()}s.act=a;
+ if(c){if(s.items.some(i=>i.pr==null)){msg='Enter prepared quantities for every item before closing.';return route()}
+  if(!fs().W.some(w=>w.sid==s.id)&&!(document.getElementById('nw')||{}).checked){msg='Add waste entries, or tick "No waste to record".';return route()}
+  s.status='Closed';aud('Meal closed',`${s.date} ${s.meal}, ${a} diners`);msg='Meal closed.'}else msg='Draft saved.';route()}
+function fsBatch(){if(!guard('stock'))return;const f=fs(),i=V('ki'),q=+V('kq'),b=V('kb');if(!i||!(q>0)||!b){msg='Enter an ingredient, a quantity above zero and a best-before date.';return route()}f.K.push({id:f.kid++,ing:i,qty:q,recv:iso(0),bb:b,loc:V('kl')});msg='Batch saved.';route()}
+function fsDisc(id){if(!guard('stock'))return;const f=fs(),k=f.K.find(x=>x.id==id),s=f.S.find(x=>x.status!='Closed')||f.S[f.S.length-1];f.W.push({id:f.wid++,sid:s.id,item:'Mixed / unclassified',cat:CATS[3],reason:'Spoilage',kg:k.qty,disp:'General disposal',note:'Expired batch: '+k.ing,by:ROLES[role],at:iso(0)});aud('Stock discarded',`${k.ing} ${k.qty} kg`);k.qty=0;msg='Logged as spoiled stock.';route()}
+function carbon(){const{D}=analyse(),c=campuses[cur],kwh=D.reduce((a,z)=>a+avg(z.tot),0)*30,co=kwh*EF/1000;
+ $('app').innerHTML=crumbs('Carbon emission')+`<div class="hero"><h2>Carbon emission</h2><p>${c.area}. Monthly estimate from the demo data.</p></div>${picker()}<div class="kpis"><div class="kpi"><b>${fmt(kwh)} kWh</b><span>Electricity per month ${tag('estimate','w')}</span></div><div class="kpi"><b class="bad">${co.toFixed(1)} t CO₂</b><span>At ${EF} kg per kWh ${tag('assumed factor','w')}</span></div><div class="kpi"><b class="good">${fmt(co*1000/21)}</b><span>Trees to absorb it in a year (21 kg each, rough)</span></div></div><p class="note">Replace the emission factor with the current published CEA value before using these numbers.</p>`}
+function route(){const p=location.hash.replace(/^#\/?/,'').split('/');
+ p[0]=='energy'?energy(p[1]||'overview'):p[0]=='resource'?resource(p[1]||'overview'):p[0]=='carbon'?carbon():home();
+ const s=$('cs');if(s)s.onchange=()=>{cur=+s.value;route()}}
+addEventListener('hashchange',()=>{route();scrollTo(0,0)});route();
+</script></body></html>
